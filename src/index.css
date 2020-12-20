@@ -1,0 +1,11 @@
+body {
+  font-family: Andika New Basic, sans-serif;
+  background-image: url('./bgLightl.jpg');
+  color: rgb(85, 83, 83);
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
