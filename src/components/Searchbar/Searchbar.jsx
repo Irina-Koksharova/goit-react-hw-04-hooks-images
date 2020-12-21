@@ -3,8 +3,12 @@ import { useState } from 'react';
 import { FiSearch } from 'react-icons/fi';
 import { IconContext } from 'react-icons';
 import s from './Searchbar.module.css';
+import {
+  clientErrorEmptyQuery,
+  showNotification,
+} from '../../services/notification/notification';
 
-const SearchBar = ({ onSubmit, onError }) => {
+const SearchBar = ({ onSubmit }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleChangeForm = e => {
@@ -13,10 +17,8 @@ const SearchBar = ({ onSubmit, onError }) => {
 
   const handleSubmitForm = e => {
     e.preventDefault();
-    const clientError =
-      'Incorrect query! Please enter your request in the correct form';
     if (searchQuery.trim() === '') {
-      onError(clientError);
+      showNotification(clientErrorEmptyQuery);
     }
     onSubmit(searchQuery);
     setSearchQuery('');
@@ -49,7 +51,6 @@ const SearchBar = ({ onSubmit, onError }) => {
 };
 
 SearchBar.propTypes = {
-  onError: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
 };
 

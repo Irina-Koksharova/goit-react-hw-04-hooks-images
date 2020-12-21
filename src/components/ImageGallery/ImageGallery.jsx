@@ -1,65 +1,61 @@
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import s from './ImageGallery.module.css';
+import {
+  clientErrorInvalidQuery,
+  serverError,
+  showNotification,
+} from '../../services/notification/notification';
+import { Status } from '../../services/status';
+import { apiServise } from '../../services/image-api';
 import Spinner from '../Loader';
 import ImageGalleryItem from '../ImageGalleryItem';
 import Modal from '../Modal';
 import Button from '../Button';
 
-const apiServise = (clientQuery, currentPage) => {
-  const PUBLIC_URL = 'https://pixabay.com/api/';
-  const KEY = '19018418-5cf416ff9d3b144c810bafa25';
-  const url = `${PUBLIC_URL}?q=${clientQuery}&page=${currentPage}&key=${KEY}&image_type=photo&orientation=horizontal&per_page=12`;
-  return fetch(url).then(response => response.json());
-};
-
 const ImageGallery = ({
   searchQuery,
   currentPage,
   modalState,
-  onError,
   onToggleModal,
 }) => {
   const [query, setQuery] = useState(null);
   const [page, setPage] = useState(currentPage);
-  const [status, setStatus] = useState('idle');
+  const [status, setStatus] = useState(Status.IDLE);
   const [modalImageSrc, setModalImageSrc] = useState(null);
   const [modalImageAlt, setModalImageAlt] = useState(null);
 
   useEffect(() => {
-    console.log('Запустился первый useEffect');
     if (!searchQuery) {
       return;
     }
-    setStatus('pending');
+
+    setStatus(Status.PENDING);
     setPage(currentPage);
-    const clientError =
-      'Sorry, the service cannot process your request😨. Try again, please';
-    const serverError =
-      'Sorry, there are some technical problems 😱😱😱. Please, try again later';
 
     const setStatusRejected = message => {
-      setStatus('rejected');
-      onError(message);
+      setStatus(Status.REJECTED);
+      showNotification(message);
     };
 
     const firstLoading = value => {
       setQuery(value);
       setPage(page => page + 1);
-      setStatus('resolved');
+      setStatus(Status.RESOLVED);
     };
 
     apiServise(searchQuery, currentPage)
       .then(({ hits }) =>
-        hits.length === 0 ? setStatusRejected(clientError) : firstLoading(hits),
+        hits.length === 0
+          ? setStatusRejected(clientErrorInvalidQuery)
+          : firstLoading(hits),
       )
       .catch(error => {
-        setStatus('rejected');
-        onError(serverError);
+        setStatusRejected(serverError);
       });
 
-    return () => setStatus('idle');
-  }, [currentPage, onError, searchQuery]);
+    return () => setStatus(Status.IDLE);
+  }, [currentPage, searchQuery]);
 
   const openModal = e => {
     if (e.target.nodeName === 'IMG') {
@@ -71,22 +67,29 @@ const ImageGallery = ({
   };
 
   const loadMore = () => {
-    return apiServise(searchQuery, page).then(({ hits }) => {
+    apiServise(searchQuery, page).then(({ hits }) => {
       setQuery([...query, ...hits]);
       setPage(page => page + 1);
-      setStatus('resolved');
+      setStatus(Status.RESOLVED);
+      scrollTo();
     });
   };
 
-  if (status === 'idle' || status === 'rejected') {
+  const scrollTo = () => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth',
+    });
+  };
+
+  if (status === Status.IDLE || status === Status.REJECTED) {
     return <></>;
   }
-
-  if (status === 'pending') {
+  if (status === Status.PENDING) {
     return <Spinner />;
   }
 
-  if (status === 'resolved') {
+  if (status === Status.RESOLVED) {
     return (
       <>
         <ul className={s.list} onClick={openModal}>
@@ -114,7 +117,6 @@ const ImageGallery = ({
 
 ImageGallery.propTypes = {
   modalState: PropTypes.bool.isRequired,
-  onError: PropTypes.func.isRequired,
   onToggleModal: PropTypes.func.isRequired,
   currentPage: PropTypes.number.isRequired,
   searchQuery: PropTypes.string.isRequired,
