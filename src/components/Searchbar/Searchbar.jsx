@@ -20,7 +20,7 @@ const SearchBar = ({ onSubmit }) => {
     if (searchQuery.trim() === '') {
       showNotification(clientErrorEmptyQuery);
     }
-    onSubmit(searchQuery);
+    onSubmit(searchQuery.trim());
     setSearchQuery('');
   };
 
